@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>បញ្ជាទិញ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg:#FFFBF7; --card:#FFFFFF; --line:#F0DCCB; --chip:#FFF6EF; --pick:#FBE4D5; --pickline:#B5602E;
+    --ink:#3B2416; --muted:#8A6F5E; --brand:#B5602E; --brand2:#9A4E22; --soft:#FDEBDD; --err:#B42318;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink)}
+  body{font-family:'Kantumruy Pro',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.45}
+  .wrap{max-width:520px;margin:0 auto;padding:0 16px 150px}
+
+  .hero{margin:0 -16px;aspect-ratio:2/1;min-height:160px;position:relative;overflow:hidden;border-radius:0 0 22px 22px;
+        background:linear-gradient(135deg,#F6E3D2,#EBC9AC)}
+  .hero .slide{position:absolute;inset:0;background:center/cover no-repeat;opacity:0;transition:opacity .6s}
+  .hero .slide.on{opacity:1}
+  .hero .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:84px}
+  .dots{position:absolute;bottom:10px;left:0;right:0;display:flex;gap:6px;justify-content:center}
+  .dots i{width:7px;height:7px;border-radius:4px;background:#fff;opacity:.55}
+  .dots i.on{opacity:1;width:18px}
+
+  .head{padding:16px 2px 4px}
+  .shop{color:var(--brand);font-weight:600;font-size:14px}
+  h1{font-size:22px;margin:2px 0 4px;font-weight:700}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .tag{background:var(--soft);color:var(--brand2);border-radius:999px;padding:3px 10px;font-size:13px;font-weight:500}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-top:14px;transition:box-shadow .3s}
+  .card.need{box-shadow:0 0 0 2px var(--err)}
+  .lbl{display:flex;align-items:center;justify-content:space-between;font-weight:600;font-size:16px;margin-bottom:10px}
+  .lbl .n{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:12px;background:var(--soft);color:var(--brand);font-size:13px;margin-right:8px}
+  .lbl .ok{color:#2E7D32;font-size:14px;font-weight:500}
+
+  .grid{display:grid;gap:8px}
+  .g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}.g4{grid-template-columns:repeat(4,1fr)}
+  .opt{border:1.5px solid var(--line);background:var(--chip);border-radius:14px;padding:10px 6px;text-align:center;
+       font-weight:600;font-size:16px;cursor:pointer;min-height:52px;display:flex;flex-direction:column;justify-content:center;
+       font-family:inherit;color:var(--ink);transition:background .15s,border-color .15s,transform .1s}
+  .opt:active{transform:scale(.97)}
+  .opt small{font-weight:400;font-size:12px;color:var(--muted);margin-top:1px}
+  .opt.on{background:var(--pick);border-color:var(--pickline)}
+  .opt.on small{color:var(--brand2)}
+  .opt.wide{grid-column:1/-1}
+
+  .stepper{display:flex;align-items:center;gap:10px;margin-top:10px}
+  .sbtn{width:52px;height:52px;border-radius:14px;border:1.5px solid var(--line);background:#fff;font-size:24px;font-weight:600;color:var(--ink);font-family:inherit}
+  .sbtn:active{background:var(--chip)}
+  .qty{flex:1;min-width:0;height:52px;border-radius:14px;border:1.5px solid var(--line);background:#fff;text-align:center;
+       font-size:20px;font-weight:700;font-family:inherit;color:var(--ink)}
+  .qty:focus{outline:none;border-color:var(--pickline)}
+  .note{background:var(--soft);border-radius:12px;padding:10px 12px;margin-top:10px;font-size:14px}
+  .note b{color:var(--brand)}
+
+  .bar{position:fixed;left:0;right:0;bottom:0;padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+       background:rgba(255,251,247,.96);border-top:1px solid var(--line);backdrop-filter:blur(8px)}
+  .bar .in{max-width:520px;margin:0 auto}
+  .sum{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;font-size:14px;color:var(--muted)}
+  .sum b{color:var(--ink);font-size:20px}
+  .btn{width:100%;border:0;border-radius:16px;height:56px;font-family:inherit;font-weight:700;font-size:17px;cursor:pointer;
+       background:var(--brand);color:#fff}
+  .btn:active{background:var(--brand2)}
+  .btn.off{background:#D9C3B3}
+  .btn:disabled{opacity:.6}
+  .err{color:var(--err);font-size:14px;text-align:center;min-height:0;margin-bottom:6px}
+
+  .done{text-align:center;padding:70px 20px}
+  .done .big{width:88px;height:88px;border-radius:44px;background:#E8F5E9;display:flex;align-items:center;justify-content:center;font-size:44px;margin:0 auto 16px}
+  .done .box{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;margin:18px 0;text-align:left;white-space:pre-line}
+  .hidden{display:none!important}
+  .hint{font-size:13px;color:var(--brand2);margin:-2px 0 10px}
+  textarea.rem{width:100%;min-height:70px;border-radius:14px;border:1.5px solid var(--line);background:#fff;padding:10px 12px;
+       font-family:inherit;font-size:15px;color:var(--ink);resize:vertical}
+  textarea.rem:focus{outline:none;border-color:var(--pickline)}
+  .cnt{font-size:12px;color:var(--muted);text-align:right;margin-top:4px}
+  input.date{width:100%;height:52px;border-radius:14px;border:1.5px solid var(--line);background:#fff;padding:0 12px;
+       font-family:inherit;font-size:16px;color:var(--ink);margin-top:8px}
+</style>
+</head>
+<body>
+
+<div class="wrap" id="app">
+  <div class="hero" id="hero"><div class="ph">🫙</div><div class="dots" id="dots"></div></div>
+
+  <div class="head">
+    <div class="shop" id="shop"></div>
+    <h1>ទឹកត្រចៀកកាំ 80ML</h1>
+    <div class="tags">
+      <span class="tag" id="price"></span>
+      <span class="tag" id="bonusTag"></span>
+    </div>
+  </div>
+
+  <!-- 1. how many -->
+  <div class="card" id="c-qty">
+    <div class="lbl"><span><span class="n">1</span>ចំនួនដប</span><span class="ok" id="ok-qty"></span></div>
+    <div class="grid g4" id="presets"></div>
+    <div class="stepper">
+      <button class="sbtn" id="minus" aria-label="ដក">−</button>
+      <input class="qty" id="qty" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" aria-label="ចំនួនដប">
+      <button class="sbtn" id="plus" aria-label="បូក">+</button>
+    </div>
+    <div class="note" id="bonusNote"></div>
+  </div>
+
+  <!-- 2. flavour -->
+  <div class="card" id="c-flv">
+    <div class="lbl"><span><span class="n">2</span>រសជាតិ</span><span class="ok" id="ok-flv"></span></div>
+    <div class="hint hidden" id="mixHint">✨ ទិញចាប់ពី 12 ដប អាចរើសយកទាំងពីររសជាតិបាន</div>
+    <div class="grid g2" id="flv"></div>
+  </div>
+
+  <!-- 3. sugar -->
+  <div class="card" id="c-sug">
+    <div class="lbl"><span><span class="n">3</span>កម្រិតស្ករ</span><span class="ok" id="ok-sug"></span></div>
+    <div class="grid g3" id="sug"></div>
+    <div class="stepper">
+      <button class="sbtn" id="sMinus" aria-label="ដក">−</button>
+      <input class="qty" id="sugIn" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="—" aria-label="កម្រិតស្ករ %">
+      <button class="sbtn" id="sPlus" aria-label="បូក">+</button>
+    </div>
+    <div class="note" style="text-align:center">✏️ កម្រិតផ្សេងទៀត: ចុច − / + (ម្តង 5%) ឬវាយលេខ 0 – 100</div>
+
+  <!-- 4. day -->
+  <div class="card" id="c-day">
+    <div class="lbl"><span><span class="n">4</span>ថ្ងៃយក</span><span class="ok" id="ok-day"></span></div>
+    <div class="grid g2" id="day"></div>
+    <input class="date hidden" id="dayPick" type="date">
+  </div>
+
+  <!-- 5. remark -->
+  <div class="card" id="c-rem">
+    <div class="lbl"><span><span class="n">📝</span>សំណើបន្ថែម <small style="font-weight:400;color:var(--muted)">(មិនចាំបាច់)</small></span></div>
+    <textarea class="rem" id="rem" maxlength="200" placeholder="ឧ. ស្ករតិចជាងមុន · មកយកម៉ោង 5 ល្ងាច"></textarea>
+    <div class="cnt" id="remCnt">0 / 200</div>
+  </div>
+</div>
+
+<div class="bar" id="bar">
+  <div class="in">
+    <div class="err" id="err"></div>
+    <div class="sum"><span id="sumL"></span><b id="sumR"></b></div>
+    <button class="btn" id="place">បញ្ជាទិញ</button>
+  </div>
+</div>
+
+<div class="wrap done hidden" id="done">
+  <div class="big">✅</div>
+  <h1 id="doneT"></h1>
+  <div class="box" id="doneBox"></div>
+  <div style="color:var(--muted)">⏳ សូមរង់ចាំហាងបញ្ជាក់ការកម្មង់។ សូមអរគុណ! 💛</div>
+  <div style="height:18px"></div>
+  <button class="btn" id="closeBtn">ត្រឡប់ទៅ Telegram</button>
+</div>
+
+<script>
+(function(){
+  var Q = new URLSearchParams(location.search);
+  var API = Q.get('api') || '';
+  var PRICE = Number(Q.get('p')) || 3;
+  var BONUS = Q.has('b') ? Number(Q.get('b')) : 6; if (isNaN(BONUS)) BONUS = 6;
+  var SHOP = Q.get('shop') || '';
+  var TG = window.Telegram && Telegram.WebApp;
+
+  var FLV = [{id:'jujube', t:'🔴 រសជាតិពុទ្រា'}, {id:'orig', t:'🟡 រសជាតិដើម'}];
+  var FLV_NAME = {jujube:'រសជាតិពុទ្រា', orig:'រសជាតិដើម'};
+  var MIX_MIN = 12;
+  function flvName(){ return st.flv === 'mix' ? 'ពុទ្រា ' + Math.ceil(st.qty/2) + ' + ដើម ' + Math.floor(st.qty/2) : FLV_NAME[st.flv]; }
+  var SUG = [20, 40, 50, 60, 80, 100];
+  var WD = ['អាទិត្យ','ច័ន្ទ','អង្គារ','ពុធ','ព្រហស្បតិ៍','សុក្រ','សៅរ៍'];
+  var st = {qty: BONUS > 0 ? BONUS : 6, flv: '', sug: '', day: '', note: ''};
+
+  function $(id){ return document.getElementById(id); }
+  function money(n){ n = Number(n); return '$' + (n % 1 ? n.toFixed(2) : String(n)); }
+  function bonusOf(q){ return BONUS > 0 ? Math.floor(q / BONUS) : 0; }
+  function sugText(v){ return v === 'normal' ? 'ធម្មតា (ផ្អែមតិចៗ)' : v + '%'; }
+  function haptic(){ try { TG && TG.HapticFeedback && TG.HapticFeedback.selectionChanged(); } catch(e){} }
+
+  // pickup days: tomorrow and the day after (Cambodia time)
+  function days(){
+    var p = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Phnom_Penh',year:'numeric',month:'numeric',day:'numeric'})
+              .formatToParts(new Date()).reduce(function(a,x){ a[x.type] = x.value; return a; }, {});
+    var base = Date.UTC(+p.year, +p.month - 1, +p.day);
+    return [[1,'⭐ ស្អែក'],[2,'⭐ ខានស្អែក'],[3,''],[4,''],[5,''],[6,''],[7,'']].map(function(d){
+      var t = new Date(base + d[0] * 86400000);
+      return { iso: t.getUTCFullYear() + '-' + (t.getUTCMonth()+1) + '-' + t.getUTCDate(),
+               name: d[1], sub: 'ថ្ងៃ' + WD[t.getUTCDay()] + ' ' + t.getUTCDate() + '/' + (t.getUTCMonth()+1) };
+    });
+  }
+  var ALLDAYS = days(), DAYS = ALLDAYS.slice(0, 2);
+  function pad2(n){ return (n < 10 ? '0' : '') + n; }
+  function isoPad(iso){ var a = iso.split('-'); return a[0] + '-' + pad2(+a[1]) + '-' + pad2(+a[2]); }
+  function dayInfo(iso){ return ALLDAYS.filter(function(x){ return x.iso === iso; })[0]; }
+
+  function chips(el, list, key){
+    el.innerHTML = '';
+    list.forEach(function(o){
+      var b = document.createElement('button');
+      b.className = 'opt' + (String(st[key]) === String(o.v) ? ' on' : '') + (o.wide ? ' wide' : '');
+      b.innerHTML = o.t + (o.s ? '<small>' + o.s + '</small>' : '');
+      b.onclick = function(){ st[key] = o.v; haptic(); $('c-' + key).classList.remove('need'); render(); };
+      el.appendChild(b);
+    });
+  }
+
+  function render(){
+    $('shop').textContent = SHOP;
+    $('price').textContent = money(PRICE) + ' / ដប';
+    $('bonusTag').textContent = BONUS > 0 ? '🎁 ទិញ ' + BONUS + ' ថែម 1' : '';
+    $('bonusTag').classList.toggle('hidden', !(BONUS > 0));
+
+    var pre = BONUS > 0 ? [BONUS, BONUS*2, BONUS*3, BONUS*4] : [6, 12, 18, 24];
+    chips($('presets'), pre.map(function(q){ return {v:q, t:String(q), s: bonusOf(q) ? 'ថែម ' + bonusOf(q) : 'ដប'}; }), 'qty');
+    if (document.activeElement !== $('qty')) $('qty').value = st.qty || '';
+    var b = bonusOf(st.qty);
+    $('bonusNote').innerHTML = b ? '🎁 <b>ថែម ' + b + ' ដប</b> · ទទួលបានសរុប ' + (st.qty + b) + ' ដប'
+                                 : (BONUS > 0 ? '🎁 ទិញ ' + BONUS + ' ដប ថែម 1 ដប' : '');
+    $('bonusNote').classList.toggle('hidden', !$('bonusNote').innerHTML);
+
+    if (st.flv === 'mix' && st.qty < MIX_MIN) st.flv = '';
+    var fl = FLV.map(function(f){ return {v:f.id, t:f.t}; });
+    if (st.qty >= MIX_MIN) fl.push({v:'mix', t:'🔴🟡 យកទាំងពីររសជាតិ', s: Math.ceil(st.qty/2) + ' + ' + Math.floor(st.qty/2), wide:true});
+    chips($('flv'), fl, 'flv');
+    $('mixHint').classList.toggle('hidden', !(st.qty >= MIX_MIN));
+    showFlvPhoto();
+    chips($('sug'), SUG.map(function(n){ return {v:String(n), t:n + '%'}; })
+                    .concat([{v:'normal', t:'🍬 ធម្មតា', s:'ផ្អែមតិចៗ', wide:true}]), 'sug');
+    var dl = DAYS.map(function(d){ return {v:d.iso, t:d.name, s:d.sub}; });
+    var other = st.day && st.day !== '__pick' && !DAYS.some(function(d){ return d.iso === st.day; }) && dayInfo(st.day);
+    dl.push({v: other ? st.day : '__pick', t:'📅 ថ្ងៃផ្សេងទៀត', s: other ? dayInfo(st.day).sub : 'ក្នុង 7 ថ្ងៃ', wide:true});
+    chips($('day'), dl, 'day');
+    $('dayPick').classList.toggle('hidden', !(st.day === '__pick' || other));
+
+    if (document.activeElement !== $('sugIn')) $('sugIn').value = /^\d+$/.test(st.sug) ? st.sug + '%' : (st.sug === 'normal' ? '🍬' : '');
+    $('ok-qty').textContent = st.qty ? '✓' : '';
+    $('ok-flv').textContent = st.flv ? '✓' : '';
+    $('ok-sug').textContent = st.sug ? '✓' : '';
+    $('ok-day').textContent = st.day ? '✓' : '';
+
+    $('sumL').textContent = st.qty ? st.qty + ' ដប' + (b ? ' (ថែម ' + b + ')' : '') : 'សូមជ្រើសរើស';
+    $('sumR').textContent = money((st.qty || 0) * PRICE);
+    var miss = missing();
+    $('place').classList.toggle('off', !!miss);
+    $('place').textContent = miss ? 'សូមជ្រើសរើស ' + miss.t : 'បញ្ជាទិញ · ' + money(st.qty * PRICE);
+  }
+  function missing(){
+    if (!(st.qty >= 1)) return {k:'qty', t:'ចំនួនដប'};
+    if (!st.flv) return {k:'flv', t:'រសជាតិ'};
+    if (!st.sug) return {k:'sug', t:'កម្រិតស្ករ'};
+    if (!st.day || st.day === '__pick') return {k:'day', t:'ថ្ងៃយក'};
+    return null;
+  }
+  function setQty(q){ q = parseInt(q, 10); if (!(q >= 1)) q = 1; if (q > 999) q = 999; st.qty = q; render(); }
+
+  $('minus').onclick = function(){ haptic(); setQty((st.qty || 1) - 1); };
+  $('plus').onclick  = function(){ haptic(); setQty((st.qty || 0) + 1); };
+  $('qty').oninput = function(){
+    var v = this.value.replace(/[០-៩]/g, function(d){ return '០១២៣៤៥៦៧៨៩'.indexOf(d); }).replace(/\D/g, '').slice(0, 3);
+    this.value = v; st.qty = parseInt(v, 10) || 0; render();
+  };
+  $('qty').onblur = function(){ setQty(this.value); };
+  // sugar − / + (5% a tap) or typed 0–100
+  function setSug(n){ n = Math.max(0, Math.min(100, Math.round(n))); st.sug = String(n); $('c-sug').classList.remove('need'); render(); }
+  function curSug(){ return /^\d+$/.test(st.sug) ? Number(st.sug) : 50; }
+  $('sMinus').onclick = function(){ haptic(); setSug(/^\d+$/.test(st.sug) ? curSug() - 5 : 45); };
+  $('sPlus').onclick  = function(){ haptic(); setSug(/^\d+$/.test(st.sug) ? curSug() + 5 : 55); };
+  $('sugIn').onfocus = function(){ this.value = /^\d+$/.test(st.sug) ? st.sug : ''; };
+  $('sugIn').oninput = function(){
+    var v = this.value.replace(/[០-៩]/g, function(d){ return '០១២៣៤៥៦៧៨៩'.indexOf(d); }).replace(/\D/g, '').slice(0, 3);
+    this.value = v; if (v !== '') { st.sug = String(Math.min(100, parseInt(v, 10))); $('c-sug').classList.remove('need'); }
+    var miss = missing(); $('place').classList.toggle('off', !!miss);
+    $('place').textContent = miss ? 'សូមជ្រើសរើស ' + miss.t : 'បញ្ជាទិញ · ' + money(st.qty * PRICE);
+    $('ok-sug').textContent = st.sug ? '✓' : '';
+  };
+  $('sugIn').onblur = function(){ if (this.value !== '') setSug(parseInt(this.value, 10) || 0); else render(); };
+  $('dayPick').min = isoPad(ALLDAYS[0].iso); $('dayPick').max = isoPad(ALLDAYS[6].iso);
+  $('dayPick').onchange = function(){
+    var v = this.value.split('-').map(Number), iso = v[0] + '-' + v[1] + '-' + v[2];
+    st.day = dayInfo(iso) ? iso : '__pick'; render();
+  };
+  $('rem').oninput = function(){ st.note = this.value.slice(0, 200); $('remCnt').textContent = st.note.length + ' / 200'; };
+
+  $('place').onclick = function(){
+    $('err').textContent = '';
+    var miss = missing();
+    if (miss){
+      var c = $('c-' + miss.k); c.classList.add('need');
+      c.scrollIntoView({behavior:'smooth', block:'center'});
+      try { TG && TG.HapticFeedback && TG.HapticFeedback.notificationOccurred('warning'); } catch(e){}
+      return;
+    }
+    if (!TG || !TG.initData){ $('err').textContent = 'សូមបើកទំព័រនេះតាម Bot ក្នុង Telegram'; return; }
+    if (!API){ $('err').textContent = 'សូមបើកទំព័រនេះតាមប៊ូតុង 🛒 ក្នុង Bot'; return; }
+    var btn = $('place'); btn.disabled = true; btn.textContent = 'កំពុងផ្ញើ…';
+    var body = JSON.stringify({initData: TG.initData, qty: st.qty, flv: st.flv, sug: st.sug, day: st.day, note: st.note});
+    fetch(API + '?api=order', {method:'POST', body: body, redirect:'follow'})
+      .then(function(r){ return r.json(); })
+      .then(function(r){
+        if (!r || !r.ok){
+          btn.disabled = false; render();
+          $('err').textContent = r && r.error === 'auth' ? 'សូមបិទទំព័រនេះ ហើយចុច 🛒 ក្នុង Bot ម្តងទៀត'
+                               : 'មានបញ្ហា សូមព្យាយាមម្តងទៀត' + (r && r.error ? ' (' + r.error + ')' : '');
+          return;
+        }
+        try { TG.HapticFeedback.notificationOccurred('success'); } catch(e){}
+        var d = dayInfo(st.day);
+        $('doneT').textContent = 'បានបញ្ជាទិញ ' + r.no;
+        $('doneBox').textContent = [
+          '🔢 ' + st.qty + ' ដប' + (bonusOf(st.qty) ? ' (ថែម ' + bonusOf(st.qty) + ')' : ''),
+          '🍯 ' + flvName(), '🍬 ស្ករ ' + sugText(st.sug),
+          '📅 ថ្ងៃយក: ' + (d ? d.sub : st.day), '💰 សរុប: ' + money(st.qty * PRICE)]
+          .concat(st.note.trim() ? ['📝 ' + st.note.trim()] : []).join('\n');
+        $('app').classList.add('hidden'); $('bar').classList.add('hidden'); $('done').classList.remove('hidden');
+        window.scrollTo(0, 0);
+      })
+      .catch(function(){
+        btn.disabled = false; render();
+        $('err').textContent = 'អ៊ីនធឺណិតមានបញ្ហា សូមព្យាយាមម្តងទៀត';
+      });
+  };
+  $('closeBtn').onclick = function(){ if (TG && TG.close) TG.close(); };
+
+  // flavour photos (optional): flv_both.jpg, flv_jujube.jpg, flv_orig.jpg next to this file – the top picture follows the choice
+  var FP = {}, fpReady = false;
+  ['both','jujube','orig'].forEach(function(k){
+    ['png','jpg'].forEach(function(ext){                                  // flv_both.png or flv_both.jpg – both work
+      var img = new Image(); img.onload = function(){ if (!FP[k]) { FP[k] = img.src; fpReady = true; showFlvPhoto(); } };
+      img.src = 'flv_' + k + '.' + ext + '?v=' + (Q.get('v') || '1');
+    });
+  });
+  function showFlvPhoto(){
+    if (!fpReady) return;
+    var src = (st.flv && st.flv !== 'mix' && FP[st.flv]) || FP.both || FP.jujube || FP.orig; if (!src) return;
+    var hero = $('hero'), el = $('flvPhoto');
+    if (!el){ el = document.createElement('div'); el.id = 'flvPhoto'; el.className = 'slide on'; el.style.zIndex = 2;
+              hero.appendChild(el); var ph = hero.querySelector('.ph'); if (ph) ph.remove(); $('dots').classList.add('hidden'); }
+    if (el.dataset.src !== src){ el.style.backgroundImage = 'url("' + src + '")'; el.dataset.src = src; }
+  }
+
+  // product photos: put photo1.jpg … photo5.jpg next to this file (optional)
+  (function(){
+    var found = [], tried = 0, N = 5;
+    for (var i = 1; i <= N; i++) (function(i){
+      var img = new Image();
+      img.onload = function(){ found[i] = img.src; if (++tried === N) show(); };
+      img.onerror = function(){ if (++tried === N) show(); };
+      img.src = 'photo' + i + '.jpg';
+    })(i);
+    function show(){
+      var list = found.filter(Boolean); if (!list.length) return;
+      var hero = $('hero'), dots = $('dots'), k = 0;
+      var ph0 = hero.querySelector('.ph'); if (ph0) ph0.remove();
+      var slides = list.map(function(src, j){
+        var s = document.createElement('div'); s.className = 'slide' + (j ? '' : ' on');
+        s.style.backgroundImage = 'url("' + src + '")'; hero.insertBefore(s, dots); return s;
+      });
+      if (list.length < 2) return;
+      list.forEach(function(_, j){ var d = document.createElement('i'); if (!j) d.className = 'on'; dots.appendChild(d); });
+      function go(n){ slides[k].classList.remove('on'); dots.children[k].className = ''; k = (n + slides.length) % slides.length;
+                      slides[k].classList.add('on'); dots.children[k].className = 'on'; }
+      hero.onclick = function(){ go(k + 1); };
+      setInterval(function(){ go(k + 1); }, 4000);
+    }
+  })();
+
+  try { if (TG){ TG.ready(); TG.expand(); TG.setHeaderColor && TG.setHeaderColor('#FFFBF7'); TG.setBackgroundColor && TG.setBackgroundColor('#FFFBF7'); } } catch(e){}
+  render();
+})();
+</script>
+</body>
+</html>
