@@ -18,7 +18,7 @@
   body{font-family:'Kantumruy Pro',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.45}
   .wrap{max-width:520px;margin:0 auto;padding:0 16px 150px}
 
-  .hero{margin:0 -16px;height:200px;position:relative;overflow:hidden;border-radius:0 0 22px 22px;
+  .hero{margin:0 -16px;aspect-ratio:2/1;min-height:160px;position:relative;overflow:hidden;border-radius:0 0 22px 22px;
         background:linear-gradient(135deg,#F6E3D2,#EBC9AC)}
   .hero .slide{position:absolute;inset:0;background:center/cover no-repeat;opacity:0;transition:opacity .6s}
   .hero .slide.on{opacity:1}
@@ -75,6 +75,13 @@
   .done .big{width:88px;height:88px;border-radius:44px;background:#E8F5E9;display:flex;align-items:center;justify-content:center;font-size:44px;margin:0 auto 16px}
   .done .box{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;margin:18px 0;text-align:left;white-space:pre-line}
   .hidden{display:none!important}
+  .hint{font-size:13px;color:var(--brand2);margin:-2px 0 10px}
+  textarea.rem{width:100%;min-height:70px;border-radius:14px;border:1.5px solid var(--line);background:#fff;padding:10px 12px;
+       font-family:inherit;font-size:15px;color:var(--ink);resize:vertical}
+  textarea.rem:focus{outline:none;border-color:var(--pickline)}
+  .cnt{font-size:12px;color:var(--muted);text-align:right;margin-top:4px}
+  input.date{width:100%;height:52px;border-radius:14px;border:1.5px solid var(--line);background:#fff;padding:0 12px;
+       font-family:inherit;font-size:16px;color:var(--ink);margin-top:8px}
 </style>
 </head>
 <body>
@@ -106,6 +113,7 @@
   <!-- 2. flavour -->
   <div class="card" id="c-flv">
     <div class="lbl"><span><span class="n">2</span>រសជាតិ</span><span class="ok" id="ok-flv"></span></div>
+    <div class="hint hidden" id="mixHint">✨ ទិញចាប់ពី 12 ដប អាចរើសយកទាំងពីររសជាតិបាន</div>
     <div class="grid g2" id="flv"></div>
   </div>
 
@@ -119,6 +127,14 @@
   <div class="card" id="c-day">
     <div class="lbl"><span><span class="n">4</span>ថ្ងៃយក</span><span class="ok" id="ok-day"></span></div>
     <div class="grid g2" id="day"></div>
+    <input class="date hidden" id="dayPick" type="date">
+  </div>
+
+  <!-- 5. remark -->
+  <div class="card" id="c-rem">
+    <div class="lbl"><span><span class="n">📝</span>សំណើបន្ថែម <small style="font-weight:400;color:var(--muted)">(មិនចាំបាច់)</small></span></div>
+    <textarea class="rem" id="rem" maxlength="200" placeholder="ឧ. ស្ករតិចជាងមុន · មកយកម៉ោង 5 ល្ងាច"></textarea>
+    <div class="cnt" id="remCnt">0 / 200</div>
   </div>
 </div>
 
@@ -134,7 +150,7 @@
   <div class="big">✅</div>
   <h1 id="doneT"></h1>
   <div class="box" id="doneBox"></div>
-  <div style="color:var(--muted)">💳 ព័ត៌មានបង់ប្រាក់ ត្រូវបានផ្ញើទៅក្នុង Telegram ហើយ។</div>
+  <div style="color:var(--muted)">⏳ សូមរង់ចាំហាងបញ្ជាក់ការកម្មង់។ សូមអរគុណ! 💛</div>
   <div style="height:18px"></div>
   <button class="btn" id="closeBtn">ត្រឡប់ទៅ Telegram</button>
 </div>
@@ -144,20 +160,22 @@
   var Q = new URLSearchParams(location.search);
   var API = Q.get('api') || '';
   var PRICE = Number(Q.get('p')) || 3;
-  var BONUS = Number(Q.get('b')); if (isNaN(BONUS)) BONUS = 6;
+  var BONUS = Q.has('b') ? Number(Q.get('b')) : 6; if (isNaN(BONUS)) BONUS = 6;
   var SHOP = Q.get('shop') || '';
   var TG = window.Telegram && Telegram.WebApp;
 
   var FLV = [{id:'jujube', t:'🔴 រសជាតិពុទ្រា'}, {id:'orig', t:'🟡 រសជាតិដើម'}];
   var FLV_NAME = {jujube:'រសជាតិពុទ្រា', orig:'រសជាតិដើម'};
+  var MIX_MIN = 12;
+  function flvName(){ return st.flv === 'mix' ? 'ពុទ្រា ' + Math.ceil(st.qty/2) + ' + ដើម ' + Math.floor(st.qty/2) : FLV_NAME[st.flv]; }
   var SUG = [20, 40, 50, 60, 80, 100];
   var WD = ['អាទិត្យ','ច័ន្ទ','អង្គារ','ពុធ','ព្រហស្បតិ៍','សុក្រ','សៅរ៍'];
-  var st = {qty: BONUS > 0 ? BONUS : 6, flv: '', sug: '', day: ''};
+  var st = {qty: BONUS > 0 ? BONUS : 6, flv: '', sug: '', day: '', note: ''};
 
   function $(id){ return document.getElementById(id); }
   function money(n){ n = Number(n); return '$' + (n % 1 ? n.toFixed(2) : String(n)); }
   function bonusOf(q){ return BONUS > 0 ? Math.floor(q / BONUS) : 0; }
-  function sugText(v){ return v === 'normal' ? 'ធម្មតា (ផ្អែមល្មមៗ)' : v + '%'; }
+  function sugText(v){ return v === 'normal' ? 'ធម្មតា (ផ្អែមតិចៗ)' : v + '%'; }
   function haptic(){ try { TG && TG.HapticFeedback && TG.HapticFeedback.selectionChanged(); } catch(e){} }
 
   // pickup days: tomorrow and the day after (Cambodia time)
@@ -165,13 +183,16 @@
     var p = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Phnom_Penh',year:'numeric',month:'numeric',day:'numeric'})
               .formatToParts(new Date()).reduce(function(a,x){ a[x.type] = x.value; return a; }, {});
     var base = Date.UTC(+p.year, +p.month - 1, +p.day);
-    return [[1,'ស្អែក'],[2,'ខានស្អែក']].map(function(d){
+    return [[1,'⭐ ស្អែក'],[2,'⭐ ខានស្អែក'],[3,''],[4,''],[5,''],[6,''],[7,'']].map(function(d){
       var t = new Date(base + d[0] * 86400000);
       return { iso: t.getUTCFullYear() + '-' + (t.getUTCMonth()+1) + '-' + t.getUTCDate(),
                name: d[1], sub: 'ថ្ងៃ' + WD[t.getUTCDay()] + ' ' + t.getUTCDate() + '/' + (t.getUTCMonth()+1) };
     });
   }
-  var DAYS = days();
+  var ALLDAYS = days(), DAYS = ALLDAYS.slice(0, 2);
+  function pad2(n){ return (n < 10 ? '0' : '') + n; }
+  function isoPad(iso){ var a = iso.split('-'); return a[0] + '-' + pad2(+a[1]) + '-' + pad2(+a[2]); }
+  function dayInfo(iso){ return ALLDAYS.filter(function(x){ return x.iso === iso; })[0]; }
 
   function chips(el, list, key){
     el.innerHTML = '';
@@ -198,10 +219,19 @@
                                  : (BONUS > 0 ? '🎁 ទិញ ' + BONUS + ' ដប ថែម 1 ដប' : '');
     $('bonusNote').classList.toggle('hidden', !$('bonusNote').innerHTML);
 
-    chips($('flv'), FLV.map(function(f){ return {v:f.id, t:f.t}; }), 'flv');
+    if (st.flv === 'mix' && st.qty < MIX_MIN) st.flv = '';
+    var fl = FLV.map(function(f){ return {v:f.id, t:f.t}; });
+    if (st.qty >= MIX_MIN) fl.push({v:'mix', t:'🔴🟡 យកទាំងពីររសជាតិ', s: Math.ceil(st.qty/2) + ' + ' + Math.floor(st.qty/2), wide:true});
+    chips($('flv'), fl, 'flv');
+    $('mixHint').classList.toggle('hidden', !(st.qty >= MIX_MIN));
+    showFlvPhoto();
     chips($('sug'), SUG.map(function(n){ return {v:String(n), t:n + '%'}; })
-                    .concat([{v:'normal', t:'🍬 ធម្មតា', s:'ផ្អែមល្មមៗ', wide:true}]), 'sug');
-    chips($('day'), DAYS.map(function(d){ return {v:d.iso, t:d.name, s:d.sub}; }), 'day');
+                    .concat([{v:'normal', t:'🍬 ធម្មតា', s:'ផ្អែមតិចៗ', wide:true}]), 'sug');
+    var dl = DAYS.map(function(d){ return {v:d.iso, t:d.name, s:d.sub}; });
+    var other = st.day && st.day !== '__pick' && !DAYS.some(function(d){ return d.iso === st.day; }) && dayInfo(st.day);
+    dl.push({v: other ? st.day : '__pick', t:'📅 ថ្ងៃផ្សេងទៀត', s: other ? dayInfo(st.day).sub : 'ក្នុង 7 ថ្ងៃ', wide:true});
+    chips($('day'), dl, 'day');
+    $('dayPick').classList.toggle('hidden', !(st.day === '__pick' || other));
 
     $('ok-qty').textContent = st.qty ? '✓' : '';
     $('ok-flv').textContent = st.flv ? '✓' : '';
@@ -218,7 +248,7 @@
     if (!(st.qty >= 1)) return {k:'qty', t:'ចំនួនដប'};
     if (!st.flv) return {k:'flv', t:'រសជាតិ'};
     if (!st.sug) return {k:'sug', t:'កម្រិតស្ករ'};
-    if (!st.day) return {k:'day', t:'ថ្ងៃយក'};
+    if (!st.day || st.day === '__pick') return {k:'day', t:'ថ្ងៃយក'};
     return null;
   }
   function setQty(q){ q = parseInt(q, 10); if (!(q >= 1)) q = 1; if (q > 999) q = 999; st.qty = q; render(); }
@@ -230,6 +260,12 @@
     this.value = v; st.qty = parseInt(v, 10) || 0; render();
   };
   $('qty').onblur = function(){ setQty(this.value); };
+  $('dayPick').min = isoPad(ALLDAYS[0].iso); $('dayPick').max = isoPad(ALLDAYS[6].iso);
+  $('dayPick').onchange = function(){
+    var v = this.value.split('-').map(Number), iso = v[0] + '-' + v[1] + '-' + v[2];
+    st.day = dayInfo(iso) ? iso : '__pick'; render();
+  };
+  $('rem').oninput = function(){ st.note = this.value.slice(0, 200); $('remCnt').textContent = st.note.length + ' / 200'; };
 
   $('place').onclick = function(){
     $('err').textContent = '';
@@ -243,7 +279,7 @@
     if (!TG || !TG.initData){ $('err').textContent = 'សូមបើកទំព័រនេះតាម Bot ក្នុង Telegram'; return; }
     if (!API){ $('err').textContent = 'សូមបើកទំព័រនេះតាមប៊ូតុង 🛒 ក្នុង Bot'; return; }
     var btn = $('place'); btn.disabled = true; btn.textContent = 'កំពុងផ្ញើ…';
-    var body = JSON.stringify({initData: TG.initData, qty: st.qty, flv: st.flv, sug: st.sug, day: st.day});
+    var body = JSON.stringify({initData: TG.initData, qty: st.qty, flv: st.flv, sug: st.sug, day: st.day, note: st.note});
     fetch(API + '?api=order', {method:'POST', body: body, redirect:'follow'})
       .then(function(r){ return r.json(); })
       .then(function(r){
@@ -254,12 +290,13 @@
           return;
         }
         try { TG.HapticFeedback.notificationOccurred('success'); } catch(e){}
-        var d = DAYS.filter(function(x){ return x.iso === st.day; })[0];
+        var d = dayInfo(st.day);
         $('doneT').textContent = 'បានបញ្ជាទិញ ' + r.no;
         $('doneBox').textContent = [
           '🔢 ' + st.qty + ' ដប' + (bonusOf(st.qty) ? ' (ថែម ' + bonusOf(st.qty) + ')' : ''),
-          '🍯 ' + FLV_NAME[st.flv], '🍬 ស្ករ ' + sugText(st.sug),
-          '📅 ថ្ងៃយក: ' + (d ? d.sub : st.day), '💰 សរុប: ' + money(st.qty * PRICE)].join('\n');
+          '🍯 ' + flvName(), '🍬 ស្ករ ' + sugText(st.sug),
+          '📅 ថ្ងៃយក: ' + (d ? d.sub : st.day), '💰 សរុប: ' + money(st.qty * PRICE)]
+          .concat(st.note.trim() ? ['📝 ' + st.note.trim()] : []).join('\n');
         $('app').classList.add('hidden'); $('bar').classList.add('hidden'); $('done').classList.remove('hidden');
         window.scrollTo(0, 0);
       })
@@ -269,6 +306,21 @@
       });
   };
   $('closeBtn').onclick = function(){ if (TG && TG.close) TG.close(); };
+
+  // flavour photos (optional): flv_both.jpg, flv_jujube.jpg, flv_orig.jpg next to this file – the top picture follows the choice
+  var FP = {}, fpReady = false;
+  ['both','jujube','orig'].forEach(function(k){
+    var img = new Image(); img.onload = function(){ FP[k] = img.src; fpReady = true; showFlvPhoto(); };
+    img.src = 'flv_' + k + '.jpg?v=' + (Q.get('v') || '1');
+  });
+  function showFlvPhoto(){
+    if (!fpReady) return;
+    var src = (st.flv && st.flv !== 'mix' && FP[st.flv]) || FP.both || FP.jujube || FP.orig; if (!src) return;
+    var hero = $('hero'), el = $('flvPhoto');
+    if (!el){ el = document.createElement('div'); el.id = 'flvPhoto'; el.className = 'slide on'; el.style.zIndex = 2;
+              hero.appendChild(el); var ph = hero.querySelector('.ph'); if (ph) ph.remove(); $('dots').classList.add('hidden'); }
+    if (el.dataset.src !== src){ el.style.backgroundImage = 'url("' + src + '")'; el.dataset.src = src; }
+  }
 
   // product photos: put photo1.jpg … photo5.jpg next to this file (optional)
   (function(){
@@ -282,7 +334,7 @@
     function show(){
       var list = found.filter(Boolean); if (!list.length) return;
       var hero = $('hero'), dots = $('dots'), k = 0;
-      hero.querySelector('.ph').remove();
+      var ph0 = hero.querySelector('.ph'); if (ph0) ph0.remove();
       var slides = list.map(function(src, j){
         var s = document.createElement('div'); s.className = 'slide' + (j ? '' : ' on');
         s.style.backgroundImage = 'url("' + src + '")'; hero.insertBefore(s, dots); return s;
