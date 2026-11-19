@@ -231,7 +231,7 @@
   function render(){
     $('shop').textContent = SHOP;
     $('price').textContent = money(PRICE) + ' / ដប';
-    $('bonusTag').textContent = BONUS > 0 ? '🎁 ទិញ ' + BONUS + ' ថែម 1' : '';
+    $('bonusTag').textContent = BONUS > 0 ? '🎁 ទិញ ' + BONUS + ' ដប ថែមជូន 1 ដប' : '';
     $('bonusTag').classList.toggle('hidden', !(BONUS > 0));
 
     var pre = BONUS > 0 ? [BONUS, BONUS*2, BONUS*3, BONUS*4] : [6, 12, 18, 24];
@@ -348,10 +348,10 @@
   // flavour photos (optional): flv_both.jpg, flv_jujube.jpg, flv_orig.jpg next to this file – the top picture follows the choice
   var FP = {}, fpReady = false;
   ['both','jujube','orig'].forEach(function(k){
-    ['png','jpg'].forEach(function(ext){                                  // flv_both.png or flv_both.jpg – both work
-      var img = new Image(); img.onload = function(){ if (!FP[k]) { FP[k] = img.src; fpReady = true; showFlvPhoto(); } };
-      img.src = 'flv_' + k + '.' + ext + '?v=' + (Q.get('v') || '1');
-    });
+    var img = new Image(), v = '?v=' + (Q.get('v') || '1');            // small .jpg first (fast), else .png
+    img.onload = function(){ FP[k] = img.src; fpReady = true; showFlvPhoto(); };
+    img.onerror = function(){ if (img.src.indexOf('.jpg') > 0) img.src = 'flv_' + k + '.png' + v; };
+    img.src = 'flv_' + k + '.jpg' + v;
   });
   function showFlvPhoto(){
     if (!fpReady) return;
